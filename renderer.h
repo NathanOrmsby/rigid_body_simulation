@@ -10,25 +10,12 @@
 
 // FUNCTIONS THAT HAVE TO DO WITH DRAWING TO THE SCREEN
 // Move from world to screen coordinates and vice versa
-int to_screen(float coordinate);
+int to_screen(double coordinate);
 
-float to_world(int coordinate);
+double to_world(int coordinate);
 
 // Clearing the screen
 void clear_screen(unsigned int color, void *first_pixel, int pixel_buffer_width, int pixel_buffer_height);
-
-// Timer class for time calculations
-class TimerMsec
-{
-	unsigned resetTime; //in ticks
-
-	public:
-	TimerMsec();
-
-	void Reset();
-
-	unsigned Get();
-};
 
 // Clamp function, ensures value is between the minimum and the maximum. Prevents drawing outside the screen
 inline int clamp(int min, int val, int max);

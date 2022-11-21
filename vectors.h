@@ -14,8 +14,8 @@ class Vector
 	public:
 
 	// Coordinates for x and y directions
-	float x;
-	float y;
+	double x;
+	double y;
 };
 
 class Screen_Vector
@@ -30,7 +30,7 @@ class Screen_Vector
 // List of vector functions
 
 // Magnitude
-float vector_magnitude(Vector);
+double vector_magnitude(Vector);
 
 // Direction, returns normalized vector
 Vector vector_direction(Vector);
@@ -39,9 +39,9 @@ Vector vector_direction(Vector);
 Vector vector_addition(Vector, Vector);
 
 // Dot product: Returns a scaler
-float vector_dp(Vector, Vector);
+double vector_dp(Vector, Vector);
 
 // Angle between two vectors: Dot product method
-float angle_between_vectors(Vector, Vector);
+double angle_between_vectors(Vector, Vector);
 
 #endif /* VECTORS_H_ */

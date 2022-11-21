@@ -15,7 +15,7 @@ class State_Getter;
 // tol is convergence tolerance, default value of 0.001 normally
 #define TOL 0.001
 
-void biconjugate_gradient(State_Getter *state, float *b, float *x, int itol, float tol, int itmax, int *iter, float *err);
+void biconjugate_gradient(State_Getter *state, double *b, double *x, int itol, double tol, int itmax, int *iter, double *err);
 
 
 

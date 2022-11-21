@@ -5,8 +5,8 @@
  *      Author: norms
  */
 
-#ifndef GET_STATE_H_
-#define GET_STATE_H_
+#ifndef GET_STATE_H_BKUP_
+#define GET_STATE_H_BKUP_
 
 #include <iostream>
 #include "matrix_stuff.h"
@@ -28,21 +28,21 @@ class State_Getter
 	int num_spring2s;
 
 	// Different vectors and matrices
-	float *state_vector;
-	float *state_vector_derivative;
-	float *inverse_mass_matrix;
-	float *force_ext_vector;
-	float *constraint_vector;
-	float *constraint_derivative_vector;
+	double *state_vector;
+	double *state_vector_derivative;
+	double *inverse_mass_matrix;
+	double *force_ext_vector;
+	double *constraint_vector;
+	double *constraint_derivative_vector;
 	Matrix_Block *jacobian;
 	Matrix_Block *jacobian_transpose;
 	Matrix_Block *jacobian_derivative;
-	float *constraint_force_vector;
-	float *net_force_vector;
+	double *constraint_force_vector;
+	double *net_force_vector;
 
 	// Spring and damping coefficents
-	float ks = 0.0;
-	float kd = 0.0;
+	double ks = 0.0;
+	double kd = 0.0;
 
 	void get_current_state(Circular_Rigid_Body *mass_list, Rigid_Bar_1 *bar1s, int num_bar1s, Rigid_Bar_2 *bar2s, int num_bar2s, Spring_2 *spring2s);
 
@@ -65,7 +65,7 @@ class State_Getter
 
 	void create_jacobian_derivative(Circular_Rigid_Body *mass_list, Rigid_Bar_1 *bar1s, int num_bar1s, Rigid_Bar_2 *bar2s, int num_bar2s);
 
-	void calculate_b(float *b);
+	void calculate_b(double *b);
 
 	void calculate_net_force_vector(void);
 
@@ -73,4 +73,4 @@ class State_Getter
 };
 
 
-#endif /* GET_STATE_H_ */
+#endif /* GET_STATE_H_BKUP_ */

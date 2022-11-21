@@ -13,9 +13,9 @@ class Spring_2
 	public:
 
 	// Equilibrium length
-	float eq_length;
+	double eq_length;
 	// Spring constant
-	float spring_const;
+	double spring_const;
 	// Point 1 and 2. Where spring attaches
 	int attached_masses[2];
 
@@ -28,7 +28,7 @@ class Spring_2
 
 	void determine_spring_force(Circular_Rigid_Body *mass_list);
 
-	void apply_spring_force(Circular_Rigid_Body *mass_list, float *force_ext_vector);
+	void apply_spring_force(Circular_Rigid_Body *mass_list, double *force_ext_vector);
 
 	void draw_spring(Circular_Rigid_Body *mass_list, void *first_pixel, int pixel_buffer_width);
 };

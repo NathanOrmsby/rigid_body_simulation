@@ -10,16 +10,14 @@ class Circular_Rigid_Body
 {
 	public:
 	Vector pos;
-	float angle;
+	double angle;
 	Vector linear_vel;
-	float angular_vel;
-	Vector linear_accel;
-	float angular_accel;
+	double angular_vel;
 	Vector force_ext;
-	float torque;
-	float mass;
-	float radius;
-	float moi;
+	double torque;
+	double mass;
+	double radius;
+	double moi;
 	unsigned int color;
 
 	void draw_to_screen(void *first_pixel, int pixel_buffer_width, int pixel_buffer_height);

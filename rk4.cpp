@@ -7,12 +7,15 @@
 
 #include "euler.h"
 #include "rigid_bodies.h"
-#include "get_state.h"
 #include "vectors.h"
 #include "rk4.h"
+
+#include "get_state.h"
+#include "utils.h"
+#include "my_timer.h"
 // Runge Kutta 4th Order to solve differential equations
 
-void rk4(State_Getter *state, Circular_Rigid_Body *mass_list, Rigid_Bar_1 *bar1s, int num_bar1s, Rigid_Bar_2 *bar2s, int num_bar2s, Spring_2 *spring2s, float dt)
+void rk4(State_Getter *state, Circular_Rigid_Body *mass_list, Rigid_Bar_1 *bar1s, int num_bar1s, Rigid_Bar_2 *bar2s, int num_bar2s, Spring_2 *spring2s, double dt, int loop_count)
 {
 
 	// k1 step
@@ -21,57 +24,103 @@ void rk4(State_Getter *state, Circular_Rigid_Body *mass_list, Rigid_Bar_1 *bar1s
 	state->get_current_state(mass_list, bar1s, num_bar1s, bar2s, num_bar2s, spring2s);
 
 	// Copy net force list into k1
-	float k1[3 * state->num_bodies];
+	double k1_force[3 * state->num_bodies];
 	for (int i = 0; i < 3 * state->num_bodies; i++)
 	{
-		k1[i] = state->net_force_vector[i];
+		k1_force[i] = state->net_force_vector[i];
 	}
-	state->free_all();
 
-//	std::cout << "Printing mass properties BEFORE k1 calculation" << std::endl;
-//	for (int i = 0; i < state->num_bodies; i++)
+	// DEBUGGING
+//	if (loop_count == 1)
 //	{
-//		std::cout << "Mass " << i << std::endl;
-//		std::cout << "Position is: x: " << mass_list[i].pos.x << " y: " << mass_list[i].pos.y << std::endl;
-//		std::cout << "Velocity is: vx: " << mass_list[i].linear_vel.x << " vy: " << mass_list[i].linear_vel.y << std::endl;
-//		std::cout << "Acceleration is: ax: " << mass_list[i].linear_accel.x << " ay: " << mass_list[i].linear_accel.y << std::endl;
+//		std::cout << "DEBUGGING" << std::endl;
+//		std::cout << "\nPrinting mass properties" << std::endl;
+//		for (int i = 0; i < state->num_bodies; i++)
+//		{
+//			std::cout << "Mass " << i << std::endl;
+//			std::cout << "Pos: x: " << mass_list[i].pos.x << " y: " << mass_list[i].pos.y << std::endl;
+//			std::cout << "Vel: vx: " << mass_list[i].linear_vel.x << " vy: " << mass_list[i].linear_vel.y << std::endl;
+//		}
+//		std::cout << "\n\nPrinting jacobian" << std::endl;
+//		print_matrix_block_list(state->jacobian, state->num_constraints);
+//		std::cout << "\n\nPrinting jacobian derivative" << std::endl;
+//		print_matrix_block_list(state->jacobian_derivative, state->num_constraints);
+//
+//	}
+
+	state->free_all();
+	// K1 velocity
+	double k1_vel[3 * state->num_bodies];
+	for (int i = 0; i < state->num_bodies; i++)
+	{
+		k1_vel[3 * i] = mass_list[i].linear_vel.x;
+		k1_vel[3 * i + 1] = mass_list[i].linear_vel.y;
+		k1_vel[3 * i + 2] = mass_list[i].angular_vel;
+	}
+
+//	if (loop_count == 1)
+//	{
+//		std::cout << "Printing k1 force" << std::endl;
+//		for (int i = 0; i < 3 * state->num_bodies; i++)
+//		{
+//			std::cout << k1_force[i] << " ";
+//		}
+//		std::cout << "\n\nPrinting k1 velocity" << std::endl;
+//		for (int i = 0; i < 3 * state->num_bodies; i++)
+//		{
+//			std::cout << k1_vel[i] << " ";
+//		}
+//		std::cout << std::endl;
 //	}
 
 	// k2 step
-	// Make new mass_list for k2 state
+	// Make new mass_list for k2 state.
 	Circular_Rigid_Body mass_list_k2[state->num_bodies];
+
+	// Copy properties of mass_list
+
 	copy_mass_list(mass_list, mass_list_k2, state->num_bodies);
 
-	// Update position for k2_masses using k1 as net force with dt / 2 time step
-	float k2_step = (float)(dt / 2.0);
-	euler_method(mass_list_k2, state->num_bodies, k1, k2_step);
+	// Push k2 state forward dt / 2 using k1 as net force
+	for (int i = 0; i < state->num_bodies; i++)
+	{
+		// Update velocities: THIS USES k1 / 2
+		mass_list_k2[i].linear_vel.x += (k1_force[3 * i] / mass_list_k2[i].mass) * 0.5 * dt;
+		mass_list_k2[i].linear_vel.y += (k1_force[3 * i + 1] / mass_list_k2[i].mass * 0.5) * dt;
+		mass_list_k2[i].angular_vel += (k1_force[3 * i + 2] / mass_list_k2[i].moi * 0.5) * dt;
 
-//	std::cout << "Printing mass properties AFTER updating mass_list_k2" << std::endl;
-//	for (int i = 0; i < state->num_bodies; i++)
-//	{
-//		std::cout << "Mass " << i << std::endl;
-//		std::cout << "Position is: x: " << mass_list[i].pos.x << " y: " << mass_list[i].pos.y << std::endl;
-//		std::cout << "Velocity is: vx: " << mass_list[i].linear_vel.x << " vy: " << mass_list[i].linear_vel.y << std::endl;
-//		std::cout << "Acceleration is: ax: " << mass_list[i].linear_accel.x << " ay: " << mass_list[i].linear_accel.y << std::endl;
-//	}
+		// Update positions: Using k1 velocity. Initial position velocity
+		mass_list_k2[i].pos.x += k1_vel[3 * i] * 0.5 * dt;
+		mass_list_k2[i].pos.y += k1_vel[3 * i + 1] * 0.5 * dt;
+		mass_list_k2[i].angle += k1_vel[3 * i + 2] * 0.5 * dt;
+	}
 
 	// New state_getter for k2
 	State_Getter k2_state;
 	k2_state.num_bodies = state->num_bodies;
 	k2_state.num_constraints = num_bar1s + num_bar2s;
-	k2_state.ks = 0.5;
-	k2_state.kd = 0.5;
 	k2_state.num_spring2s = state->num_spring2s;
 
 	// Get state for k2
 	k2_state.get_current_state(mass_list_k2, bar1s, num_bar1s, bar2s, num_bar2s, spring2s);
 
 	// Fill up k2 net force
-	float k2[3 * state->num_bodies];
+	double k2_force[3 * state->num_bodies];
 	for (int i = 0; i < 3 * state->num_bodies; i++)
 	{
-		k2[i] = k2_state.net_force_vector[i];
+		k2_force[i] = k2_state.net_force_vector[i];
 	}
+
+	// Get k2 velocity vector
+	double k2_vel[3 * state->num_bodies];
+	for (int i = 0; i < state->num_bodies; i++)
+	{
+
+		k2_vel[3 * i] = mass_list_k2[i].linear_vel.x;
+		k2_vel[3 * i + 1] = mass_list_k2[i].linear_vel.y;
+		k2_vel[3 * i + 2] = mass_list_k2[i].angular_vel;
+	}
+
 	// Free all matrices in k2_state
 	k2_state.free_all();
 
@@ -80,36 +129,46 @@ void rk4(State_Getter *state, Circular_Rigid_Body *mass_list, Rigid_Bar_1 *bar1s
 	Circular_Rigid_Body mass_list_k3[state->num_bodies];
 	copy_mass_list(mass_list, mass_list_k3, state->num_bodies);
 
-	// Update position for k3 using k2 as net force
-	float k3_step = (float)(dt / 2.0);
-	euler_method(mass_list_k3, state->num_bodies, k2, k3_step);
+	// Push the mass_list_k3 state forward dt / 2 using k2 as net force
+	for (int i = 0; i < state->num_bodies; i++)
+	{
+		// Update velocities
+		mass_list_k3[i].linear_vel.x += (k2_force[3 * i] / mass_list_k3[i].mass) * 0.5 * dt;
+		mass_list_k3[i].linear_vel.y += (k2_force[3 * i + 1] / mass_list_k3[i].mass) * 0.5 * dt;
+		mass_list_k3[i].angular_vel += (k2_force[3 * i + 2] / mass_list_k3[i].moi) * 0.5 * dt;
 
-//	std::cout << "Printing mass properties AFTER updating mass_list_k3" << std::endl;
-//	for (int i = 0; i < state->num_bodies; i++)
-//	{
-//		std::cout << "Mass " << i << std::endl;
-//		std::cout << "Position is: x: " << mass_list[i].pos.x << " y: " << mass_list[i].pos.y << std::endl;
-//		std::cout << "Velocity is: vx: " << mass_list[i].linear_vel.x << " vy: " << mass_list[i].linear_vel.y << std::endl;
-//		std::cout << "Acceleration is: ax: " << mass_list[i].linear_accel.x << " ay: " << mass_list[i].linear_accel.y << std::endl;
-//	}
+		// Update positions
+		mass_list_k3[i].pos.x += k2_vel[3 * i] * 0.5 * dt;
+		mass_list_k3[i].pos.y += k2_vel[3 * i + 1] * 0.5 * dt;
+		mass_list_k3[i].angle += k2_vel[3 * i + 2] * 0.5 * dt;
+	}
 
 	// New state_getter for k3
 	State_Getter k3_state;
 	k3_state.num_bodies = state->num_bodies;
 	k3_state.num_constraints = num_bar1s + num_bar2s;
 	k3_state.num_spring2s = state->num_spring2s;
-	k3_state.ks = 0.5;
-	k3_state.kd = 0.5;
 
 	// Get state for k3
 	k3_state.get_current_state(mass_list_k3, bar1s, num_bar1s, bar2s, num_bar2s, spring2s);
 
 	// Fill up k3 net force
-	float k3[3 * state->num_bodies];
+	double k3_force[3 * state->num_bodies];
 	for (int i = 0; i < 3 * state->num_bodies; i++)
 	{
-		k3[i] = k3_state.net_force_vector[i];
+		k3_force[i] = k3_state.net_force_vector[i];
 	}
+
+	// Get k3 velocity vector
+	double k3_vel[3 * state->num_bodies];
+	for (int i = 0; i < state->num_bodies; i++)
+	{
+
+		k3_vel[3 * i] = mass_list_k3[i].linear_vel.x;
+		k3_vel[3 * i + 1] = mass_list_k3[i].linear_vel.y;
+		k3_vel[3 * i + 2] = mass_list_k3[i].angular_vel;
+	}
+
 	// Free all matrices in k3_state
 	k3_state.free_all();
 
@@ -118,103 +177,76 @@ void rk4(State_Getter *state, Circular_Rigid_Body *mass_list, Rigid_Bar_1 *bar1s
 	Circular_Rigid_Body mass_list_k4[state->num_bodies];
 	copy_mass_list(mass_list, mass_list_k4, state->num_bodies);
 
-	// Update position for k4_masses using k3 as net force
-	euler_method(mass_list_k4, state->num_bodies, k3, dt);
+	// Push the k4 state forward dt using k3 as net force and k3 vel
+	for (int i = 0; i < state->num_bodies; i++)
+	{
+		// Update velocities
+		mass_list_k4[i].linear_vel.x += (k3_force[3 * i] / mass_list_k4[i].mass) * dt;
+		mass_list_k4[i].linear_vel.y += (k3_force[3 * i + 1] / mass_list_k4[i].mass) * dt;
+		mass_list_k4[i].angular_vel += (k3_force[3 * i + 2] / mass_list_k4[i].moi) * dt;
 
-//	std::cout << "Printing mass properties AFTER updating mass_list_k4" << std::endl;
-//	for (int i = 0; i < state->num_bodies; i++)
-//	{
-//		std::cout << "Mass " << i << std::endl;
-//		std::cout << "Position is: x: " << mass_list[i].pos.x << " y: " << mass_list[i].pos.y << std::endl;
-//		std::cout << "Velocity is: vx: " << mass_list[i].linear_vel.x << " vy: " << mass_list[i].linear_vel.y << std::endl;
-//		std::cout << "Acceleration is: ax: " << mass_list[i].linear_accel.x << " ay: " << mass_list[i].linear_accel.y << std::endl;
-//	}
+		// Update positions
+		mass_list_k4[i].pos.x += k3_vel[3 * i] * dt;
+		mass_list_k4[i].pos.y += k3_vel[3 * i + 1] * dt;
+		mass_list_k4[i].angle += k3_vel[3 * i + 2] * dt;
+	}
 
 	// New state_getter for k4
 	State_Getter k4_state;
 	k4_state.num_bodies = state->num_bodies;
 	k4_state.num_constraints = num_bar1s + num_bar2s;
 	k4_state.num_spring2s = state->num_spring2s;
-	k4_state.ks = 0.5;
-	k4_state.kd = 0.5;
 
 	// Get state for k4
 	k4_state.get_current_state(mass_list_k4, bar1s, num_bar1s, bar2s, num_bar2s, spring2s);
 
 	// Fill up k4 net force
-	float k4[3 * state->num_bodies];
+	double k4_force[3 * state->num_bodies];
 	for (int i = 0; i < 3 * state->num_bodies; i++)
 	{
-		k4[i] = k4_state.net_force_vector[i];
+		k4_force[i] = k4_state.net_force_vector[i];
 	}
+
+	// Get k4 velocity vector
+	double k4_vel[3 * state->num_bodies];
+	for (int i = 0; i < state->num_bodies; i++)
+	{
+
+		k4_vel[3 * i] = mass_list_k4[i].linear_vel.x;
+		k4_vel[3 * i + 1] = mass_list_k4[i].linear_vel.y;
+		k4_vel[3 * i + 2] = mass_list_k4[i].angular_vel;
+	}
+
 	// Free all matrices in k4_state
 	k4_state.free_all();
 
-	// Calculate the weighted rk4 net force (k1 + 2*k2 + 2*k3 + k4)
-	float rk4_force[3 * state->num_bodies];
-
+	// Calculate the weighted rk4 net force (k1_force + 2*k2_force + 2*k3_force + k4_force)
+	double rk4_force[3 * state->num_bodies];
+	double rk4_vel[3 * state->num_bodies];
 	for (int i = 0; i < 3 * state->num_bodies; i++)
 	{
-		rk4_force[i] = (k1[i] + 2 * k2[i] + 2 * k3[i] + k4[i]) / 6.0;
+		rk4_force[i] = k1_force[i] + 2 * k2_force[i] + 2 * k3_force[i] + k4_force[i];
+	}
+	for (int i = 0; i < 3 * state->num_bodies; i++)
+	{
+		rk4_vel[i] = k1_vel[i] + 2 * k2_vel[i] + 2 * k3_vel[i] + k4_vel[i];
 	}
 
-	// Apply weighted force using Euler
-	euler_method(mass_list, state->num_bodies, rk4_force, dt);
+	// Calculate the weighted rk4 velocity (k1_vel + 2 * k2_vel + 2 * k3_vel + k4_vel)
 
-//	std::cout << "Printing mass properties AFTER applying weighted force" << std::endl;
-//	for (int i = 0; i < state->num_bodies; i++)
-//	{
-//		std::cout << "Mass " << i << std::endl;
-//		std::cout << "Position is: x: " << mass_list[i].pos.x << " y: " << mass_list[i].pos.y << std::endl;
-//		std::cout << "Velocity is: vx: " << mass_list[i].linear_vel.x << " vy: " << mass_list[i].linear_vel.y << std::endl;
-//		std::cout << "Acceleration is: ax: " << mass_list[i].linear_accel.x << " ay: " << mass_list[i].linear_accel.y << std::endl;
-//	}
+	// Push the initial state forward dt using the weighted average rk4 force as net force
+	for (int i = 0; i < state->num_bodies; i++)
+	{
+		// Update velocities
+		mass_list[i].linear_vel.x += ((rk4_force[3 * i] / mass_list[i].mass) / 6.0) * dt;
+		mass_list[i].linear_vel.y += ((rk4_force[3 * i + 1] / mass_list[i].mass) / 6.0) * dt;
+		mass_list[i].angular_vel += ((rk4_force[3 * i + 2] / mass_list[i].moi) / 6.0) * dt;
 
-//	std::cout << "Printing mass properties of rk4" << std::endl;
-//	for (int i = 0; i < state->num_bodies; i++)
-//	{
-//		std::cout << "Mass " << i << std::endl;
-//		std::cout << "Position is: x: " << mass_list[i].pos.x << " y: " << mass_list[i].pos.y << std::endl;
-//		std::cout << "Velocity is: vx: " << mass_list[i].linear_vel.x << " vy: " << mass_list[i].linear_vel.y << std::endl;
-//		std::cout << "Acceleration is: ax: " << mass_list[i].linear_accel.x << " ay: " << mass_list[i].linear_accel.y << std::endl;
-//	}
-
-//	std::cout << "Printing all calculated net force vectors" << std::endl;
-//	std::cout << "Printing k1:" << std::endl;
-//	for (int i = 0; i < 3 * state->num_bodies; i++)
-//	{
-//		std::cout << k1[i] << " ";
-//	}
-//	std::cout << std::endl;
-//
-//	std::cout << "Printing k2:" << std::endl;
-//	for (int i = 0; i < 3 * state->num_bodies; i++)
-//	{
-//		std::cout << k2[i] << " ";
-//	}
-//	std::cout << std::endl;
-//
-//	std::cout << "Printing k3:" << std::endl;
-//	for (int i = 0; i < 3 * state->num_bodies; i++)
-//	{
-//		std::cout << k3[i] << " ";
-//	}
-//	std::cout << std::endl;
-//
-//	std::cout << "Printing k4:" << std::endl;
-//	for (int i = 0; i < 3 * state->num_bodies; i++)
-//	{
-//		std::cout << k4[i] << " ";
-//	}
-//	std::cout << std::endl;
-//
-//	std::cout << "Printing weighted:" << std::endl;
-//	for (int i = 0; i < 3 * state->num_bodies; i++)
-//	{
-//		std::cout << rk4_force[i] / 6 << " ";
-//	}
-//	std::cout << std::endl;
-
+		// Update positions
+		mass_list[i].pos.x += (rk4_vel[3 * i] / 6.0)  * dt;
+		mass_list[i].pos.y += (rk4_vel[3 * i + 1] / 6.0)  * dt;
+		mass_list[i].angle += (rk4_vel[3 * i + 2] / 6.0)  * dt;
+	}
 }
 
 // Fills a mass list for another state
@@ -228,9 +260,6 @@ void copy_mass_list(Circular_Rigid_Body *old_list, Circular_Rigid_Body *new_list
 		new_list[i].linear_vel.x = old_list[i].linear_vel.x;
 		new_list[i].linear_vel.y = old_list[i].linear_vel.y;
 		new_list[i].angular_vel = old_list[i].angular_vel;
-		new_list[i].linear_accel.x = old_list[i].linear_accel.x;
-		new_list[i].linear_accel.y = old_list[i].linear_accel.y;
-		new_list[i].angular_accel = old_list[i].angular_accel;
 		new_list[i].force_ext.x = old_list[i].force_ext.x;
 		new_list[i].force_ext.y = old_list[i].force_ext.y;
 		new_list[i].torque = old_list[i].torque;
@@ -238,39 +267,5 @@ void copy_mass_list(Circular_Rigid_Body *old_list, Circular_Rigid_Body *new_list
 		new_list[i].radius = old_list[i].radius;
 		new_list[i].moi = old_list[i].moi;
 		new_list[i].color = old_list[i].color;
-
-		//		float x = old_list[i].pos.x;
-		//		float y = old_list[i].pos.y;
-		//		float angle = old_list[i].angle;
-		//		float vx = old_list[i].linear_vel.x;
-		//		float vy = old_list[i].linear_vel.y;
-		//		float angular_vel = old_list[i].angular_vel;
-		//		float ax = old_list[i].linear_accel.x;
-		//		float ay = old_list[i].linear_accel.y;
-		//		float angular_accel = old_list[i].angular_accel;
-		//		float force_ext_x = old_list[i].force_ext.x;
-		//		float force_ext_y = old_list[i].force_ext.y;
-		//		float torque = old_list[i].torque;
-		//		float mass = old_list[i].mass;
-		//		float radius = old_list[i].radius;
-		//		float moi = old_list[i].moi;
-		//		unsigned int color = old_list[i].color;
-		//		new_list[i].pos.x = x;
-		//		new_list[i].pos.y = y;
-		//		new_list[i].angle = angle;
-		//		new_list[i].linear_vel.x = vx;
-		//		new_list[i].linear_vel.y = vy;
-		//		new_list[i].angular_vel = angular_vel;
-		//		new_list[i].linear_accel.x = ax;
-		//		new_list[i].linear_accel.y = ay;
-		//		new_list[i].angular_accel = angular_accel;
-		//		new_list[i].force_ext.x = force_ext_x;
-		//		new_list[i].force_ext.y = force_ext_y;
-		//		new_list[i].torque = torque;
-		//		new_list[i].mass = mass;
-		//		new_list[i].radius = radius;
-		//		new_list[i].moi = moi;
-		//		new_list[i].color = color;
 	}
-
 }

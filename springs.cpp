@@ -8,15 +8,15 @@ void Spring_2::determine_spring_force(Circular_Rigid_Body *mass_list)
 {
 	Vector point0_to_1 = {mass_list[attached_masses[1]].pos.x - mass_list[attached_masses[0]].pos.x, mass_list[attached_masses[1]].pos.y - mass_list[attached_masses[0]].pos.y};
 	// Find distance of length or contraction
-	float dist = vector_magnitude(point0_to_1);
+	double dist = vector_magnitude(point0_to_1);
 
 	// Find center point
 	Vector center = {mass_list[attached_masses[0]].pos.x + point0_to_1.x / 2, mass_list[attached_masses[0]].pos.y + point0_to_1.y / 2};
 	// Calculate length change
-	float length_change = dist - eq_length;
+	double length_change = dist - eq_length;
 
 	// Determine magnitude
-	float sf_mag = -1 * spring_const * length_change;
+	double sf_mag = -1 * spring_const * length_change;
 
 	// Determine directions to each point from center
 	Vector center_to_point0 = {mass_list[attached_masses[0]].pos.x - center.x, mass_list[attached_masses[0]].pos.y - center.y};
@@ -30,7 +30,7 @@ void Spring_2::determine_spring_force(Circular_Rigid_Body *mass_list)
 	sf1 = {sf_mag * dir1.x, sf_mag * dir1.y};
 }
 
-void Spring_2::apply_spring_force(Circular_Rigid_Body *mass_list, float *force_ext_vector)
+void Spring_2::apply_spring_force(Circular_Rigid_Body *mass_list, double *force_ext_vector)
 {
 	// Applies spring force onto masses it is attached to
 	// Mass 0

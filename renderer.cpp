@@ -10,14 +10,14 @@
 // Move from world to screen coordinates
 // SCALE FROM WORLD TO SCREEN
 float SCALE = 100.0;
-int to_screen(float coordinate)
+int to_screen(double coordinate)
 {
 	return (int)(SCALE * coordinate);
 }
 
-float to_world(int coordinate)
+double to_world(int coordinate)
 {
-	return (float)coordinate / SCALE;
+	return (double)(coordinate / SCALE);
 }
 
 // Clearing the screen
@@ -32,18 +32,6 @@ void clear_screen(unsigned int color, void *first_pixel, int pixel_buffer_width,
 		}
 	}
 }
-
-// Timer class for time calculations
-
-
-TimerMsec::TimerMsec() {}
-
-void TimerMsec::Reset()
-{	resetTime=clock();  }
-
-unsigned TimerMsec::Get()
-{	return unsigned((clock()-resetTime)*1000.0/CLOCKS_PER_SEC);	}
-
 
 // Circle
 inline int clamp(int min, int val, int max)
@@ -548,7 +536,6 @@ void draw_rod(float x0, float y0, float x1, float y1, float thickness, unsigned 
 		m = (y1 - y0) / (x1 - x0);
 	}
 
-//	std::cout << "Slope: " << m << std::endl;
 	// Find the four points of the rectangle
 
 	// Find perpendicular slope
@@ -567,8 +554,6 @@ void draw_rod(float x0, float y0, float x1, float y1, float thickness, unsigned 
 	{
 		m_perp = -1 / m;
 	}
-
-	//std::cout << "Slope perp: " << m_perp << std::endl;
 
 	// Find angle between thickness vector and horizontal
 	float angle;
@@ -606,17 +591,12 @@ void draw_rod(float x0, float y0, float x1, float y1, float thickness, unsigned 
 	rx3 = x0 - (thickness / 2) * cos(angle);
 	ry3 = y0 - (thickness / 2) * sin(angle);
 
-//	printf("Top right: (%f, %f), angle: %f\n", rx0, ry0, angle);
-//	printf("Converted: Bottom right: (%d, %d)\n", to_screen(rx1), to_screen(ry1));
-
 	// Draw the borders of the rectangle
 
 	draw_line(rx0, ry0, rx1, ry1, color, first_pixel, pixel_buffer_width);
 	draw_line(rx1, ry1, rx2, ry2, color, first_pixel, pixel_buffer_width);
 	draw_line(rx2, ry2, rx3, ry3, color, first_pixel, pixel_buffer_width);
 	draw_line(rx3, ry3, rx0, ry0, color, first_pixel, pixel_buffer_width);
-
-	//printf("top right: (%f, %f), bottom right: (%f, %f), bottom left (%f, %f), top left (%f, %f)\n", rx0, ry0, rx1, ry1, rx2, ry2, rx3, ry3);
 
 	// Fill in the borders. NOT WORKING
 

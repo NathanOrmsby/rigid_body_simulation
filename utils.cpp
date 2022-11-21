@@ -1,7 +1,8 @@
 #include "utils.h"
 #include "matrix_stuff.h"
-#include "get_state.h"
 #include <iostream>
+
+#include "get_state.h"
 int minimum(int a, int b)
 {
 	if (a < b)
