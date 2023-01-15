@@ -93,7 +93,7 @@ int WinMain( HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int 
 	RegisterClass(&window_class);
 
 	// Create window
-	HWND window = CreateWindow(window_class.lpszClassName, "My First Game!", WS_OVERLAPPEDWINDOW | WS_VISIBLE, CW_USEDEFAULT, CW_USEDEFAULT, 1280, 720, 0, 0, hInstance, 0);
+	HWND window = CreateWindow(window_class.lpszClassName, "My First Game!", WS_OVERLAPPEDWINDOW | WS_VISIBLE, CW_USEDEFAULT, CW_USEDEFAULT, 1920, 1080, 0, 0, hInstance, 0);
 	HDC hdc = GetDC(window);
 
 	// ********* INITIAL CONDITIONS *************
@@ -106,7 +106,7 @@ int WinMain( HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int 
 	Circular_Rigid_Body masses[num_masses];
 
 	masses[0].pos = {to_world(render_state.width / 2 + 100), to_world(render_state.height / 2 + 100)};
-	masses[1].pos = {masses[0].pos.x, masses[0].pos.y + to_world(100)};
+	masses[1].pos = {to_world(render_state.width / 2 + 150), to_world(render_state.height / 2 + 200)};
 
 
 
@@ -151,13 +151,13 @@ int WinMain( HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int 
 	int num_spring2s = 0;
 
 	Spring_2 spring2s[num_spring2s];
-//	spring2s[0].attached_masses[0] = 1;
-//	spring2s[0].attached_masses[1] = 4;
+	spring2s[0].attached_masses[0] = 0;
+	spring2s[0].attached_masses[1] = 1;
 
 	for (int i = 0; i < num_spring2s; i++)
 	{
-		spring2s[i].eq_length = to_world(75);
-		spring2s[i].spring_const = 5.0;
+		spring2s[i].eq_length = to_world(10);
+		spring2s[i].spring_const = 15.0;
 		spring2s[i].color = 0xFFFF00;
 	}
 
@@ -170,7 +170,7 @@ int WinMain( HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int 
 	current_state.num_constraints = num_bar1s + num_bar2s;
 	current_state.num_spring2s = num_spring2s;
 
-	// Timer stuff. Limiting the framerate, setting dt. SUPER AWESOME, to the microsecond
+	// Timer stuff. Limiting the framerate, setting dt. To the microsecond
 	LARGE_INTEGER ticks_per_second, start, current;
 	int64_t ticks_per_loop;
 	unsigned int loop_count = 0;
@@ -179,8 +179,8 @@ int WinMain( HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int 
 	QueryPerformanceFrequency(&ticks_per_second);
 
 	// Find number of ticks per loop. I want 300 loops per second. Set dt
-	ticks_per_loop = ticks_per_second.QuadPart / 1000;
-	double dt = 1.0 / 1000.0;
+	ticks_per_loop = ticks_per_second.QuadPart / 300;
+	double dt = 1.0 / 300.0;
 
 	// Start the counter
 	QueryPerformanceCounter(&start);
@@ -190,7 +190,7 @@ int WinMain( HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int 
 //
 //	my_timer_t timer = my_timer_start();
 
-	rk4(&current_state, masses, bar1s, num_bar1s, bar2s, num_bar2s, spring2s, dt, loop_count);
+//	rk4(&current_state, masses, bar1s, num_bar1s, bar2s, num_bar2s, spring2s, dt, loop_count);
 
 //	int64_t time = my_timer_end(&timer);
 //
@@ -213,7 +213,7 @@ int WinMain( HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int 
 		rk4(&current_state, masses, bar1s, num_bar1s, bar2s, num_bar2s, spring2s, dt, loop_count);
 
 		 //Draw a frame if time is right
-		if (loop_count >= 17)
+		if (loop_count >= 5)
 		{
 
 			// Clear screen
@@ -245,8 +245,9 @@ int WinMain( HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int 
 			loop_count = 0;
 
 //			std::cout << "Constraints" << std::endl;
-			std::cout << "c1: " << bar1s[0].constraint(masses) << std::endl;
-			std::cout << "Total energy: " << total_energy(masses, num_masses) << std::endl;
+//			std::cout << "c1: " << bar1s[0].constraint(masses) << std::endl;
+//			std::cout << "c2: " << bar2s[0].constraint(masses) << std::endl;
+//			std::cout << "Total energy: " << total_energy(masses, num_masses) << std::endl;
 		}
 
 		// Render

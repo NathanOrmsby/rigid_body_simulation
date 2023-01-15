@@ -29,6 +29,10 @@ class Screen_Vector
 
 // List of vector functions
 
+// Minimum and Maximum
+Vector minimum_vector(Vector a, Vector b);
+Vector maximum_vector(Vector a, Vector b);
+
 // Magnitude
 double vector_magnitude(Vector);
 

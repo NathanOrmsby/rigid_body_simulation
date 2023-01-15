@@ -40,6 +40,13 @@ void State_Getter::get_current_state(Circular_Rigid_Body *mass_list, Rigid_Bar_1
 	zero_vector(b, num_constraints);
 	calculate_b(b);
 
+//	std::cout << "Printing b" << std::endl;
+//	for (int i = 0; i < num_constraints; i++)
+//	{
+//		std::cout << b[i] << " ";
+//	}
+//	std::cout << std::endl;
+
 	// Solve for the lambda vector using biconjugate gradient method. try itol 1 to start
 	double x[num_constraints];
 	zero_vector(x, num_constraints);
@@ -133,7 +140,7 @@ void State_Getter::create_force_ext_vector(Circular_Rigid_Body *mass_list, Sprin
 	}
 
 	// Apply spring force to relevant masses
-	if (num_spring2s < 0)
+	if (num_spring2s > 0)
 	{
 		for (int i = 0; i < num_spring2s; i++)
 		{
@@ -335,6 +342,13 @@ void State_Getter::calculate_b(double *b)
 	{
 		lhs[i] = -1 * lhs[i];
 	}
+
+//	std::cout << "Printing lhs" << std::endl;
+//	for (int i = 0; i < num_constraints; i++)
+//	{
+//		std::cout << lhs[i] << " ";
+//	}
+//	std::cout << std::endl;
 
 	// Now do the right hand side.
 	// First inverse mass times F_ext

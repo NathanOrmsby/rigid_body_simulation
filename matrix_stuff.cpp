@@ -7,8 +7,6 @@
 
 #include "get_state.h"
 
-// THIS IS IT, THE COOLEST SHIT I'VE EVER CODED. LINEAR ALGEBRA IN C++
-
 // Define a matrix block structure. These will be relevant in jacobian and jacobian time derivative matrices
 // Each matrix block will pertain to a type of constraint
 // The idea is to utilize these in sparse matrices so time is not wasted on zero elements
@@ -367,7 +365,7 @@ void solve_for_x(int n, double *A_diagonal, double *b, double *x)
 	// A_diagonal is the diagonal part of A. We just plug in identity here because we dont calc A.
 	// Plugging in identity just means dividing by 1, so its just assigning shit right now.
 	// If the diagonal is equal to zero, then the x component is equal to the b component
-	for (int i = 0; i < n + 1; i++)
+	for (int i = 0; i < n; i++)
 	{
 		if (A_diagonal[i] == 0.0)
 		{

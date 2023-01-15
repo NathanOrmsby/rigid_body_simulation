@@ -5,6 +5,55 @@
 
 // List of vector functions
 
+// Minimum and Maximum
+Vector minimum_vector(Vector a, Vector b)
+{
+	Vector result;
+	// X coordinate
+	if (a.x < b.x)
+	{
+		result.x = a.x;
+	}
+	else
+	{
+		result.x = b.x;
+	}
+	// Y coordinate
+	if (a.y < b.y)
+	{
+		result.y = a.y;
+	}
+	else
+	{
+		result.y = b.y;
+	}
+	return result;
+}
+
+Vector maximum_vector(Vector a, Vector b)
+{
+	Vector result;
+	// X coordinate
+	if (a.x < b.x)
+	{
+		result.x = b.x;
+	}
+	else
+	{
+		result.x = a.x;
+	}
+	// Y coordinate
+	if (a.y < b.y)
+	{
+		result.y = b.y;
+	}
+	else
+	{
+		result.y = a.y;
+	}
+	return result;
+}
+
 // Magnitude
 double vector_magnitude(Vector a)
 {
